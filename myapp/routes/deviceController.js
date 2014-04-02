@@ -1,4 +1,4 @@
-/*Get leds info*/
+/* Get info DeviceController */
 
 var testingFile = require('./openTestingFile.js').testingFile;
 
@@ -9,14 +9,14 @@ exports.readAll = function(req, res) {
 			res.send('There is no Gateway ' + req.params.GATEWAY_ID + '.', 400);
 			return;
 		}
-	var mydevice = myGate.DeviceControllers[req.params.DEVICECONTROLLER_ID];
-	if (mydevice == null)
+	var mydevices = myGate.DeviceControllers;
+	if (mydevices == null)
 		{
-			res.send('There is no Device Controller ' + req.params.DEVICECONTROLLER_ID 
-				+ ' on Gateway ' + req.params.GATEWAY_ID + '.', 400);
+			res.send('There is no Device Controller on the Gateway ' 
+				+ req.params.GATEWAY_ID + '.', 400);
 			return;
 		}
-	res.send(mydevice.Leds);
+	res.send(mydevices);
 };
 
 exports.readOne = function(req, res) {
@@ -33,13 +33,5 @@ exports.readOne = function(req, res) {
 				+ ' on Gateway ' + req.params.GATEWAY_ID + '.', 400);
 			return;
 		}
-	var myLed = mydevice.Leds[req.params.IDLED];
-	if (myLed == null)
-		{
-			res.send('There is no Led ' + req.params.IDLED 
-				+ ' on Device Controller ' + req.params.DEVICECONTROLLER_ID 
-				+ ' on Gateway ' + req.params.GATEWAY_ID + '.', 400);
-			return;
-		}
-	res.send(myLed);
+	res.send(mydevice);
 };
