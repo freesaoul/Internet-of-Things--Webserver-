@@ -10,12 +10,28 @@ var routes = require('./routes');
 var users = require('./routes/user');
 var leds = require('./routes/leds');
 var gateways = require('./routes/gateways');
+var deviceControllers = require('./routes/DeviceController');
+
+var orm = require('orm');
+
 
 var app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
+
+app.use(orm.express("mysql://root:21529f@localhost/iot", {
+    define: function (db, models, next) {
+        db.load("./model/models.js", function(error) {
+            if (error)
+                throw error;
+            orm.settings.sey("connection.debug", true);
+            db.sync();
+        });
+        next();
+    }
+}));
 
 app.use(favicon());
 app.use(logger('dev'));
@@ -27,9 +43,12 @@ app.use(app.router);
 
 app.get('/', routes.index);
 app.get('/users', users.list);
-app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/Led/:IDLED/status', leds.oneStatus);
-app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/leds/status', leds.allStatus);
+app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/leds/read', leds.readAll);
+app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/Led/:IDLED/read', leds.readOne);
+app.get('/Gateway/:GATEWAY_ID/DeviceControllers/read', deviceControllers.readAll);
+app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/read', deviceControllers.readOne);
 app.get('/Gateways/read', gateways.readAll);
+app.get('/Gateway/:GATEWAY_ID/read', gateways.readOne);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
