@@ -33,6 +33,24 @@ app.use(orm.express("mysql://root:21529f@localhost/iot", {
     }
 }));
 
+var auth = function(req, res, next)   
+{
+    console.log("test a");
+    return express.basicAuth(function(user, pass, callback) {
+        console.log("test a");
+    req.db.models.user.find({
+    "userName":user,
+    "password":pass
+    }, function(err, users){
+        console.log(users.count);
+        });
+ //var result = (user === 'testUser' && pass === 'testPass');
+    var result = users.count > 0;
+    callback(null /* error */, result);
+    });
+    next();
+}
+
 app.use(favicon());
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -43,12 +61,14 @@ app.use(app.router);
 
 app.get('/', routes.index);
 app.get('/users', users.list);
-app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/leds/read', leds.readAll);
-app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/Led/:IDLED/read', leds.readOne);
-app.get('/Gateway/:GATEWAY_ID/DeviceControllers/read', deviceControllers.readAll);
-app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/read', deviceControllers.readOne);
-app.get('/Gateways/read', gateways.readAll);
-app.get('/Gateway/:GATEWAY_ID/read', gateways.readOne);
+app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/leds/read', auth, leds.readAll);
+app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/Led/:IDLED/read', auth, leds.readOne);
+app.get('/Gateway/:GATEWAY_ID/DeviceControllers/read', auth, deviceControllers.readAll);
+app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/read', auth, deviceControllers.readOne);
+app.get('/Gateways/read', auth, gateways.readAll);
+app.get('/Gateway/:GATEWAY_ID/read', auth, gateways.readOne);
+
+app.post('/user/create', users.create);
 
 /// catch 404 and forwarding to error handler
 app.use(function(req, res, next) {
