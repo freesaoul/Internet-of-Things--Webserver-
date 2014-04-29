@@ -21,6 +21,7 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+//Connect to mysql db by usin orm and express
 app.use(orm.express("mysql://root:21529f@localhost/iot", {
     define: function (db, models, next) {
         db.load("./model/models.js", function(error) {
@@ -33,22 +34,21 @@ app.use(orm.express("mysql://root:21529f@localhost/iot", {
     }
 }));
 
+//Function authentification (use express BasicAuth)
 var auth = function(req, res, next)   
 {
-    console.log("test a");
-    return express.basicAuth(function(user, pass, callback) {
-        console.log("test a");
-    req.db.models.user.find({
-    "userName":user,
-    "password":pass
-    }, function(err, users){
-        console.log(users.count);
+     express.basicAuth(function(user, pass, callback) {
+        req.db.models.user.find({
+            "userName":user,
+            "password":pass
+        }, function(err, users)
+        {
+            console.log("Count users: " + users.length);
+            var result = (users.length > 0);
+            req.authUser = users[0];
+            callback(null /* error */, result);
         });
- //var result = (user === 'testUser' && pass === 'testPass');
-    var result = users.count > 0;
-    callback(null /* error */, result);
-    });
-    next();
+    })(req, res, next);
 }
 
 app.use(favicon());
@@ -59,15 +59,31 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(app.router);
 
+app.all('*', function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    //res.header("Access-Control-Allow-Headers", "X-Requested-With");
+    res.header("Access-Control-Allow-Headers", "Authorization");
+    next();
+});
+
+//default routes
 app.get('/', routes.index);
 app.get('/users', users.list);
+
+//Leds routes
 app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/leds/read', auth, leds.readAll);
 app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/Led/:IDLED/read', auth, leds.readOne);
+
+//Device Controller routes
 app.get('/Gateway/:GATEWAY_ID/DeviceControllers/read', auth, deviceControllers.readAll);
 app.get('/Gateway/:GATEWAY_ID/DeviceController/:DEVICECONTROLLER_ID/read', auth, deviceControllers.readOne);
+
+//Gateway routes
 app.get('/Gateways/read', auth, gateways.readAll);
 app.get('/Gateway/:GATEWAY_ID/read', auth, gateways.readOne);
+app.post('/Gateway/add', auth, gateways.add);
 
+//User routes
 app.post('/user/create', users.create);
 
 /// catch 404 and forwarding to error handler
